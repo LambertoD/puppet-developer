@@ -1,0 +1,50 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure(2) do |config|
+
+  config.hostmanager.enabled = true
+  config.hostmanager.ignore_private_ip = false
+  config.hostmanager.include_offline = true
+
+  config.vm.define "puppet" do |puppet|
+    # Puppet master on Centos 7
+    config.vm.provider "virtualbox" do |v|
+      v.memory = 2048
+    end
+    config.vm.synced_folder ".", "/vagrant"
+    config.vm.synced_folder "../code", "/puppet_code"
+    config.vm.synced_folder "../puppetserver", "/puppet_puppetserver"
+    puppet.vm.box = "boxcutter/centos72"
+    puppet.vm.hostname = "puppet.example.com"
+    puppet.vm.network :private_network, ip: "10.0.20.10"
+    puppet.hostmanager.aliases = %w(puppet)
+    puppet.vm.provision :shell, path: "provision_puppet.sh"
+  end
+  config.vm.define "agent1" do |agent1|
+    # Puppet agent on Centos 7
+    agent1.vm.box = "boxcutter/centos72"
+    agent1.vm.synced_folder ".", "/vagrant"
+    agent1.vm.hostname = "agent1.example.com"
+    agent1.vm.network :private_network, ip: "10.0.20.11"
+    agent1.hostmanager.aliases = %w(agent1)
+    agent1.vm.provision :shell, path: "provision_agent1.sh"
+    # agent1.vm.provision "shell", inline: <<-SHELL
+    #   sudo yum update -y
+    #   sudo yum install -y  http://yum.puppetlabs.com/puppetlabs-release-pc1-el1-7-noarch.rpm
+    #   sudo yum install puppet-agent -y
+    #   sudo service puppet start
+    # SHELL
+  end
+  config.vm.define "agent2" do |agent2|
+    # Puppet agent on Debian
+    agent2.vm.box = "ubuntu/trusty64"
+    agent2.vm.synced_folder ".", "/vagrant"
+    agent2.vm.hostname = "agent2.example.com"
+    agent2.vm.network :private_network, ip: "10.0.20.12"
+    agent2.hostmanager.aliases = %w(agent2)
+    agent2.vm.provision :shell, path: "provision_agent2.sh"
+
+  end
+
+end
